@@ -1,14 +1,50 @@
-﻿# Überwache den Netzwerkverkehr
-$networkInterface = "Ethernet"  # Netzwerkadapter, den du überwachen möchtest
-$timeout = 10  # Timeout in Sekunden für die Überwachung
+# Funktion zur Analyse des Netzwerkverkehrs und Bewertung der Gefahrensituation
+function AnalyzeNetworkTraffic {
+    param (
+        [string]$networkInterface,
+        [int]$threshold
+    )
 
-while ($true) {
+    # Überwache den Netzwerkverkehr
     $packets = Get-NetAdapterStatistics -Name $networkInterface
 
     # Überprüfe die Anzahl der eingehenden Pakete pro Sekunde
-    if ($packets.ReceivedPerSecond -gt 1000) {
-        # Sende eine Benachrichtigung über den DDoS-Angriff
-        Send-MailMessage -To "admin@example.com" -From "alert@example.com" -Subject "DDoS-Angriff erkannt" -Body "Es wurden verdächtig viele Pakete empfangen."
+    if ($packets.ReceivedPerSecond -gt $threshold) {
+        # Analysiere den Netzwerkverkehr
+        # Hier können weitere Analysen und Bewertungen hinzugefügt werden
+        $packetDetails = "Es wurden verdächtig viele Pakete empfangen."
+        # Sende eine Benachrichtigung über den möglichen Angriff
+        Send-MailMessage -To "admin@example.com" -From "alert@example.com" -Subject "Möglicher Netzwerkangriff erkannt" -Body $packetDetails
+    }
+}
+
+# Funktion zum Überprüfen der Netzwerkverbindung (LAN oder WLAN)
+function CheckNetworkConnection {
+    $networkConnection = Get-NetConnectionProfile
+    if ($networkConnection.InterfaceAlias -like "*Wi-Fi*") {
+        return "Wi-Fi"
+    }
+    elseif ($networkConnection.InterfaceAlias -like "*Ethernet*") {
+        return "Ethernet"
+    }
+    else {
+        return "Unknown"
+    }
+}
+
+# Hauptprogramm
+$timeout = 10  # Timeout in Sekunden für die Überwachung
+$threshold = 1000  # Schwellenwert für verdächtig viele Pakete pro Sekunde
+
+while ($true) {
+    $networkInterface = CheckNetworkConnection
+
+    if ($networkInterface -ne "Unknown") {
+        Write-Host "Aktive Netzwerkverbindung: $networkInterface"
+        AnalyzeNetworkTraffic -networkInterface $networkInterface -threshold $threshold
+    }
+    else {
+        Write-Host "Unbekannte Netzwerkverbindung. Überwachung nicht möglich."
     }
 
     Start-Sleep -Seconds $timeout
